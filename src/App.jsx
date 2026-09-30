@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-
+import React, { useEffect, useRef, useState } from 'react'
 /* ---------- Editable business details & products ---------- */
 const CONFIG = {
   email: '[Support email]',
+  // Add your own POST endpoints; a successful HTTP response confirms delivery.
+  newsletterEndpoint: '',
+  contactEndpoint: '',
   phone: '[Business number]',
   hours: '[Days, times and timezone]',
   address: '[Actual business address]',
@@ -16,9 +18,9 @@ const CONFIG = {
 }
 const PRODUCTS = [
   { id: 'jeans', cat: 'Jeans', name: 'Everyday Denim Jeans', img: '1542272604-787c3835535d', desc: 'Make denim the starting point of your look. Pair these jeans with a tee for casual plans or a shirt when you want a more polished combination.', colours: ['#1e3a8a', '#0a0a0a', '#93c5fd'], sizes: ['28', '30', '32', '34', '36'], price: 1999 },
-  { id: 'tee', cat: 'T-Shirts', name: 'Classic Crew-Neck T-Shirt', img: '1521572163474-6864f9cf17ab', desc: 'Keep the outfit simple or make room for layers. This crew-neck tee pairs with denim, trousers and an open shirt.', colours: ['#ffffff', '#facc15', '#2563eb'], sizes: ['S', 'M', 'L', 'XL'], price: 799 },
-  { id: 'shirt', cat: 'Shirts', name: 'Casual Button-Down Shirt', img: '1596755094514-f87e34085b2c', desc: 'Wear it buttoned for a neat finish or open over a tee for a relaxed combination. Add your favourite jeans or trousers to complete the look.', colours: ['#bfdbfe', '#ffffff', '#fde68a'], sizes: ['S', 'M', 'L', 'XL'], price: 1499 },
-  { id: 'pants', cat: 'Pants', name: 'Everyday Trousers', img: '1624378439575-d8705ad7ae80', desc: 'Build an outfit around a pair of trousers. Keep it casual with a tee or pair them with a shirt for a smarter look.', colours: ['#d6c7a1', '#0a0a0a', '#1e40af'], sizes: ['28', '30', '32', '34', '36'], price: 1799 },
+  { id: 'tee', cat: 'T-Shirts', name: 'Classic Crew-Neck T-Shirt', img: '1521572163474-6864f9cf17ab', desc: 'Keep the outfit simple or make room for layers. This crew-neck tee pairs with denim, trousers and an open shirt.', colours: ['#ffffff', '#93c5fd', '#2563eb'], sizes: ['S', 'M', 'L', 'XL'], price: 799 },
+  { id: 'shirt', cat: 'Shirts', name: 'Casual Button-Down Shirt', img: '1596755094514-f87e34085b2c', desc: 'Wear it buttoned for a neat finish or open over a tee for a relaxed combination. Add your favourite jeans or trousers to complete the look.', colours: ['#bfdbfe', '#ffffff', '#cbd5e1'], sizes: ['S', 'M', 'L', 'XL'], price: 1499 },
+  { id: 'pants', cat: 'Pants', name: 'Everyday Trousers', img: '1624378439575-d8705ad7ae80', desc: 'Build an outfit around a pair of trousers. Keep it casual with a tee or pair them with a shirt for a smarter look.', colours: ['#94a3b8', '#0a0a0a', '#1e40af'], sizes: ['28', '30', '32', '34', '36'], price: 1799 },
 ]
 const CATS = [
   { id: 'jeans', k: 'Jeans', title: 'Your Day Starts With Denim.', text: 'A favourite pair of jeans can be the beginning of countless outfits. Pair denim with a simple tee for an easy daytime look, add a shirt for an evening out, or experiment with layers to change the mood.', extra: 'Explore the available washes and fits, then choose the pair that works for your wardrobe.', btn: 'Explore Jeans', line: 'Your next go-to pair starts here.', img: '1542272604-787c3835535d' },
@@ -45,7 +47,7 @@ const NOTES = [
   ['Make the Finish Yours', 'A tuck, a sleeve roll or your choice of footwear can change an outfit. Keep the details that feel natural to you.'],
 ]
 const FAQS = [
-  ['What clothing can I shop at Neerakm?', 'Explore jeans, T-shirts, shirts, pants and trousers. Available sizes, colours and styles are listed on individual product pages.'],
+  ['What clothing can I shop at Nickse?', 'Explore jeans, T-shirts, shirts, pants and trousers. Available sizes, colours and styles are listed on individual product pages.'],
   ['How do I find the right size?', 'Check the size guide for your chosen product and compare its measurements with a similar garment you own. Review the fit description before ordering.'],
   ['Are the products suitable for casual and smart-casual outfits?', 'Explore styling ideas using tees and denim for casual looks, or shirts and trousers for smarter combinations. Choose according to the occasion and the actual product style.'],
   ['How can I check the fabric?', 'Each product page should list its verified fabric composition and relevant garment details. Contact us if you need further information.'],
@@ -59,16 +61,14 @@ const FAQS = [
 const INFO = {
   'Shipping Information': `We deliver to ${CONFIG.serviceAreas}. Estimated delivery takes ${CONFIG.timeframe}. Shipping charges and any relevant conditions are shown ${CONFIG.shippingNote}.`,
   'Returns & Exchanges': 'Refer to our Returns & Exchanges policy for eligible items, the request window, item condition requirements and the steps to follow.',
-  'Privacy Policy': 'We use your email only to send Neerakm collection updates, outfit ideas and brand news when you have agreed to receive them. You can unsubscribe at any time.',
-  'Terms & Conditions': 'By using this site you agree to Neerakm’s terms of sale and use. Product details, sizes and availability are shown on each product page.',
+  'Privacy Policy': 'We use your email only to send Nickse collection updates, outfit ideas and brand news when you have agreed to receive them. You can unsubscribe at any time.',
+  'Terms & Conditions': 'By using this site you agree to Nickse’s terms of sale and use. Product details, sizes and availability are shown on each product page.',
 }
 const NAV = [['Home', '#home'], ['Shop All', '#featured'], ['Jeans', '#jeans'], ['T-Shirts', '#tee'], ['Shirts', '#shirt'], ['Pants', '#pants'], ['Our Story', '#story'], ['Contact', '#contact']]
-
 /* ---------- Helpers ---------- */
 const src = (id, w = 2400) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=90`
 const inr = (n) => '₹' + n.toLocaleString('en-IN')
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)
-
 const P = {
   search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3',
   user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
@@ -79,15 +79,60 @@ const P = {
   minus: 'M5 12h14',
   arrow: 'M5 12h14M13 6l6 6-6 6',
   check: 'M20 6 9 17l-5-5',
+  spark: 'm12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z',
+  layers: 'm12 3 10 6-10 6L2 9Zm-10 12 10 6 10-6M2 15l10 6 10-6',
+  compass: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm4-16-3 7-7 3 3-7Z',
+  shirt: 'm8 3-6 4 3 5 3-2v11h8V10l3 2 3-5-6-4c0 4-8 4-8 0Z',
+  up: 'm6 14 6-6 6 6',
+  eye: 'M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
 }
 const Icon = ({ n, className = 'h-5 w-5', fill }) => (
   <svg viewBox="0 0 24 24" className={className} fill={fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={P[n]} /></svg>
 )
-
-function Img({ id, alt, className = '', w = 2400, pos = 'center', eager }) {
+// Responsive photography with a graceful fallback and a soft loading reveal.
+function Img({ id, alt, className = '', w = 1800, pos = 'center', eager }) {
   const [bad, setBad] = useState(false)
-  if (bad) return <div role="img" aria-label={alt} className={`${className} bg-gradient-to-br from-blue-200 via-white to-yellow-100`} />
-  return <img src={src(id, w)} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setBad(true)} className={className} style={{ objectPosition: pos }} />
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => { setBad(false); setLoaded(false) }, [id])
+  if (bad) return <div role="img" aria-label={alt} className={`${className} image-fallback`}><Icon n="shirt" className="h-12 w-12" /><span>{alt}</span></div>
+  return <img src={src(id, w)} srcSet={[480, 768, 1200, 1800, 2400].filter(n => n <= w).map(n => `${src(id, n)} ${n}w`).join(', ')} sizes="(max-width: 639px) 95vw, (max-width: 1023px) 48vw, 640px" alt={alt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} decoding="async" onLoad={() => setLoaded(true)} onError={() => setBad(true)} className={`photo ${loaded ? 'photo-loaded' : ''} ${className}`} style={{ objectPosition: pos }} />
+}
+
+// Focus containment works for both the product dialogs and the shopping drawer.
+function useFocusScope(ref, onClose, enabled = true) {
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    if (!enabled) return
+    const previous = document.activeElement
+    const root = ref.current
+    if (!root) return
+    const controls = () => [...root.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]')].filter(el => el.getClientRects().length)
+    const initial = root.querySelector('[autofocus]') || (root.contains(previous) ? previous : controls()[0]) || root
+    initial.focus()
+    const key = e => {
+      if (e.key === 'Escape') { e.preventDefault(); closeRef.current() }
+      if (e.key !== 'Tab') return
+      const list = controls(); const first = list[0]; const last = list[list.length - 1]
+      if (!first) { e.preventDefault(); root.focus(); return }
+      if (e.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) { e.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', key)
+    return () => { document.removeEventListener('keydown', key); if (previous?.isConnected) previous.focus() }
+  }, [ref, enabled])
+}
+function BagPanel({ onClose, children }) {
+  const ref = useRef(null)
+  useFocusScope(ref, onClose)
+  return <aside ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Shopping bag" className="glass-strong absolute inset-y-0 right-0 flex w-full max-w-md animate-slide flex-col rounded-l-[2rem] p-5 sm:p-6">{children}</aside>
+}
+function readSaved(key, validate) {
+  try { const data = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(data) ? data.filter(validate) : [] } catch { return [] }
+}
+function Eyebrow({ children }) { return <p className="eyebrow"><span />{children}</p> }
+function CollectionTabs({ selected, onChange }) {
+  return <div className="collection-tabs" role="group" aria-label="Filter collection">{['All', ...PRODUCTS.map(p => p.cat)].map(label => <button type="button" key={label} aria-pressed={selected === label} onClick={() => onChange(label)} className={selected === label ? 'is-selected' : ''}>{label}{label === 'All' && <span>04</span>}</button>)}</div>
 }
 
 function Reveal({ children, className = '', delay = 0 }) {
@@ -95,23 +140,20 @@ function Reveal({ children, className = '', delay = 0 }) {
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    if (!("IntersectionObserver" in window)) { el.classList.add("in"); return }
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add('in'); io.disconnect() } }, { threshold: 0.12 })
     io.observe(el)
     return () => io.disconnect()
   }, [])
   return <div ref={ref} className={`rv ${className}`} style={{ transitionDelay: `${delay}ms` }}>{children}</div>
 }
-
 function Modal({ title, onClose, children, wide }) {
-  useEffect(() => {
-    const h = (e) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
-  }, [onClose])
+  const ref = useRef(null)
+  useFocusScope(ref, onClose)
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center p-3 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={title}>
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-blue-950/20 backdrop-blur-sm" />
-      <div className={`glass-strong relative max-h-[88vh] w-full ${wide ? 'max-w-2xl' : 'max-w-md'} animate-pop overflow-y-auto rounded-[2rem] p-6 sm:p-8`}>
+      <div ref={ref} tabIndex={-1} className={`glass-strong relative max-h-[88vh] w-full ${wide ? 'max-w-2xl' : 'max-w-md'} animate-pop overflow-y-auto rounded-[2rem] p-6 sm:p-8`}>
         <div className="mb-4 flex items-start justify-between gap-4">
           <h3 className="text-2xl font-extrabold">{title}</h3>
           <button onClick={onClose} aria-label="Close" className="btn-glass !p-2"><Icon n="x" /></button>
@@ -121,15 +163,18 @@ function Modal({ title, onClose, children, wide }) {
     </div>
   )
 }
-
 /* ---------- App ---------- */
 export default function App() {
   const [menu, setMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [modal, setModal] = useState(null)
   const [bagOpen, setBagOpen] = useState(false)
-  const [bag, setBag] = useState([])
-  const [wish, setWish] = useState([])
+  const [bag, setBag] = useState(() => readSaved('nickse-bag', i => PRODUCTS.some(p => p.id === i?.p?.id) && PRODUCTS.find(p => p.id === i.p.id).sizes.includes(i.size) && Number.isInteger(i.q) && i.q > 0).map(i => ({ ...i, p: PRODUCTS.find(p => p.id === i.p.id) })))
+  const [wish, setWish] = useState(() => readSaved('nickse-wishlist', id => PRODUCTS.some(p => p.id === id)))
+  const [filter, setFilter] = useState('All')
+  const [activeSection, setActiveSection] = useState('home')
+  const [progress, setProgress] = useState(0)
+  const [sort, setSort] = useState('featured')
   const [toast, setToast] = useState('')
   const [hl, setHl] = useState('')
   const [faq, setFaq] = useState(0)
@@ -137,14 +182,14 @@ export default function App() {
   const [query, setQuery] = useState('')
   const [news, setNews] = useState({ v: '', s: '' })
   const [contact, setContact] = useState({ name: '', email: '', order: '', msg: '', s: '' })
+  const navScope = useRef(null)
+  useFocusScope(navScope, () => setMenu(false), menu)
   const tRef = useRef()
-
   const say = (m) => { setToast(m); clearTimeout(tRef.current); tRef.current = setTimeout(() => setToast(''), 2600) }
-  const go = (id) => { setMenu(false); setBagOpen(false); setModal(null); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 60) }
-  const focusProduct = (id) => { go('featured'); setHl(id); setTimeout(() => setHl(''), 2200) }
-
+  const go = (id) => { setMenu(false); setBagOpen(false); setModal(null); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }), 60) }
+  const focusProduct = (id) => { setFilter('All'); go('featured'); setHl(id); setTimeout(() => setHl(''), 2200) }
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 24)
+    const on = () => { setScrolled(window.scrollY > 24); const height = document.documentElement.scrollHeight - window.innerHeight; setProgress(height > 0 ? window.scrollY / height : 0) }
     on(); window.addEventListener('scroll', on, { passive: true })
     return () => window.removeEventListener('scroll', on)
   }, [])
@@ -153,11 +198,31 @@ export default function App() {
     return () => { document.body.style.overflow = '' }
   }, [menu, bagOpen, modal])
   useEffect(() => {
-    const h = () => window.innerWidth >= 1024 && setMenu(false)
+    const h = () => window.innerWidth >= 1280 && setMenu(false)
     window.addEventListener('resize', h)
     return () => window.removeEventListener('resize', h)
   }, [])
-
+  useEffect(() => {
+    try { localStorage.setItem('nickse-bag', JSON.stringify(bag)); localStorage.setItem('nickse-wishlist', JSON.stringify(wish)) } catch { /* Private browsers may disable storage. */ }
+  }, [bag, wish])
+  useEffect(() => {
+    if (!('IntersectionObserver' in window)) return
+    const io = new IntersectionObserver(entries => { entries.forEach(entry => { if (entry.isIntersecting) setActiveSection(entry.target.id) }) }, { rootMargin: '-15% 0px -65% 0px' })
+    NAV.forEach(([, href]) => { const el = document.querySelector(href); if (el) io.observe(el) })
+    return () => io.disconnect()
+  }, [])
+  useEffect(() => () => clearTimeout(tRef.current), [])
+  useEffect(() => {
+    const close = e => { if (e.key === 'Escape') setMenu(false) }
+    document.addEventListener('keydown', close)
+    return () => document.removeEventListener('keydown', close)
+  }, [])
+  const visibleProducts = PRODUCTS.filter(p => filter === 'All' || p.cat === filter).sort((a, b) => sort === 'low' ? a.price - b.price : sort === 'high' ? b.price - a.price : 0)
+  const chat = () => {
+    const number = CONFIG.phone.replace(/[^0-9]/g, '')
+    if (number.length < 10) return say('WhatsApp chat will open once a business number is added.')
+    window.open(`https://wa.me/${number}`, '_blank', 'noopener,noreferrer')
+  }
   const openSize = (p) => { setSize(''); setModal({ t: 'size', p }) }
   const addToBag = () => {
     if (!size) return say('Please choose a size first.')
@@ -168,50 +233,58 @@ export default function App() {
   const bagCount = bag.reduce((a, i) => a + i.q, 0)
   const total = bag.reduce((a, i) => a + i.q * i.p.price, 0)
   const toggleWish = (id) => setWish((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id]))
-
-  const submitNews = (e) => {
-    e.preventDefault()
-    if (!emailOk(news.v)) return setNews({ ...news, s: 'error' })
-    setNews({ v: '', s: 'ok' })
+  const sendRequest = async (endpoint, data) => {
+    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), signal: AbortSignal.timeout(15000) })
+    if (!response.ok) throw new Error('Request failed')
   }
-  const submitContact = (e) => {
+  const submitNews = async (e) => {
     e.preventDefault()
-    if (!contact.name.trim() || !emailOk(contact.email) || !contact.msg.trim()) return setContact({ ...contact, s: 'error' })
-    setContact({ name: '', email: '', order: '', msg: '', s: 'ok' })
+    if (!emailOk(news.v)) return setNews(n => ({ ...n, s: 'error' }))
+    if (!CONFIG.newsletterEndpoint) return setNews(n => ({ ...n, s: 'unconnected' }))
+    setNews(n => ({ ...n, s: 'sending' }))
+    try { await sendRequest(CONFIG.newsletterEndpoint, { email: news.v, consent: true }); setNews({ v: '', s: 'ok' }) }
+    catch { setNews(n => ({ ...n, s: 'failed' })) }
   }
-
+  const submitContact = async (e) => {
+    e.preventDefault()
+    if (!contact.name.trim() || !emailOk(contact.email) || !contact.msg.trim()) return setContact(c => ({ ...c, s: 'error' }))
+    if (!CONFIG.contactEndpoint) return setContact(c => ({ ...c, s: 'unconnected' }))
+    setContact(c => ({ ...c, s: 'sending' }))
+    try { await sendRequest(CONFIG.contactEndpoint, { name: contact.name, email: contact.email, order: contact.order, message: contact.msg }); setContact({ name: '', email: '', order: '', msg: '', s: 'ok' }) }
+    catch { setContact(c => ({ ...c, s: 'failed' })) }
+  }
   const results = PRODUCTS.filter((p) => `${p.name} ${p.cat}`.toLowerCase().includes(query.toLowerCase()))
-
   return (
-    <div className="relative overflow-x-clip bg-gradient-to-b from-white via-blue-50/60 to-white">
+    <div className="nickse relative overflow-x-clip bg-gradient-to-b from-white via-blue-50/60 to-white">
+      <a className="skip-link" href="#main-content">Skip to content</a>
+      <div className="reading-progress" style={{ transform: `scaleX(${progress})` }} />
       {/* Announcement */}
-      <div className="bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 px-4 py-2 text-center text-xs font-bold sm:text-sm">
-        Discover your next everyday favourite. Explore the Neerakm collection.
+      <div className="announcement px-4 py-2 text-center text-xs font-bold sm:text-sm">
+        Discover your next everyday favourite. Explore the Nickse collection.
       </div>
-
       {/* Header */}
-      <header className="sticky top-0 z-50 px-3 pt-3 sm:px-6">
-        <nav className={`glass mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-2.5 transition-all duration-500 sm:px-6 ${scrolled ? 'bg-white/75 shadow-xl' : ''}`} aria-label="Main">
-          <a href="#home" onClick={(e) => { e.preventDefault(); go('home') }} className="font-display text-xl font-extrabold tracking-[0.18em] sm:text-2xl">
-            NEERAKM<span className="text-yellow-400">.</span>
+      <header ref={navScope} className="site-header sticky top-0 z-50 px-3 pt-3 sm:px-6">
+        <nav className={`nav-shell glass mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-2.5 transition-all duration-500 sm:px-6 ${scrolled ? 'bg-white/75 shadow-xl' : ''}`} aria-label="Main">
+          <a href="#home" onClick={(e) => { e.preventDefault(); go('home') }} className="brand flex items-center gap-1.5 font-display text-xl font-extrabold tracking-[0.12em] sm:text-2xl">
+            <span className="brand-mark" aria-hidden="true">N</span>NICKSE<span className="text-blue-600">.</span>
           </a>
-          <ul className="hidden items-center gap-1 lg:flex">
+          <ul className="hidden items-center gap-0.5 xl:flex">
             {NAV.map(([l, h]) => (
-              <li key={l}><a href={h} onClick={(e) => { e.preventDefault(); go(h.slice(1)) }} className="rounded-full px-3 py-2 text-sm font-bold text-black/75 transition hover:bg-white/80 hover:text-blue-700">{l}</a></li>
+              <li key={l}><a href={h} onClick={(e) => { e.preventDefault(); go(h.slice(1)) }} aria-current={activeSection === h.slice(1) ? "location" : undefined} className={`nav-link rounded-full px-2.5 py-2 text-[13px] font-bold transition ${activeSection === h.slice(1) ? "is-active" : "text-black/65"}`}>{l}</a></li>
             ))}
           </ul>
           <div className="flex items-center gap-1 sm:gap-2">
-            <button aria-label="Search" onClick={() => { setQuery(''); setModal({ t: 'search' }) }} className="rounded-full p-2 transition hover:bg-white/80"><Icon n="search" /></button>
-            <button aria-label="Account" onClick={() => setModal({ t: 'account' })} className="hidden rounded-full p-2 transition hover:bg-white/80 sm:block"><Icon n="user" /></button>
-            <button aria-label={`Wishlist, ${wish.length} items`} onClick={() => setModal({ t: 'wish' })} className="relative hidden rounded-full p-2 transition hover:bg-white/80 sm:block">
+            <button aria-label="Search" onClick={() => { setMenu(false); setQuery(''); setModal({ t: 'search' }) }} className="rounded-full p-2 transition hover:bg-white/80"><Icon n="search" /></button>
+            <button aria-label="Account" onClick={() => { setMenu(false); setModal({ t: 'account' }) }} className="hidden rounded-full p-2 transition hover:bg-white/80 sm:block"><Icon n="user" /></button>
+            <button aria-label={`Wishlist, ${wish.length} items`} onClick={() => { setMenu(false); setModal({ t: 'wish' }) }} className="relative hidden rounded-full p-2 transition hover:bg-white/80 sm:block">
               <Icon n="heart" fill={wish.length > 0} className={`h-5 w-5 ${wish.length ? 'text-blue-700' : ''}`} />
-              {wish.length > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-yellow-300 text-[10px] font-bold">{wish.length}</span>}
+              {wish.length > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-blue-300 text-[10px] font-bold">{wish.length}</span>}
             </button>
-            <button aria-label={`Shopping bag, ${bagCount} items`} onClick={() => setBagOpen(true)} className="relative rounded-full p-2 transition hover:bg-white/80">
+            <button aria-label={`Shopping bag, ${bagCount} items`} onClick={() => { setMenu(false); setBagOpen(true) }} className="relative rounded-full p-2 transition hover:bg-white/80">
               <Icon n="bag" />
               {bagCount > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-blue-700 text-[10px] font-bold text-white">{bagCount}</span>}
             </button>
-            <button aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)} className="relative ml-1 h-10 w-10 rounded-full lg:hidden">
+            <button aria-label={menu ? "Close navigation menu" : "Open navigation menu"} aria-controls="mobile-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)} className="relative ml-1 h-10 w-10 rounded-full xl:hidden">
               <span className={`absolute left-1/2 top-1/2 h-0.5 w-5 -translate-x-1/2 rounded bg-black transition duration-300 ${menu ? 'rotate-45' : '-translate-y-1.5'}`} />
               <span className={`absolute left-1/2 top-1/2 h-0.5 w-5 -translate-x-1/2 rounded bg-black transition duration-300 ${menu ? 'opacity-0' : ''}`} />
               <span className={`absolute left-1/2 top-1/2 h-0.5 w-5 -translate-x-1/2 rounded bg-black transition duration-300 ${menu ? '-rotate-45' : 'translate-y-1.5'}`} />
@@ -219,7 +292,7 @@ export default function App() {
           </div>
         </nav>
         {/* Mobile menu */}
-        <div className={`mx-auto grid max-w-7xl transition-all duration-500 lg:hidden ${menu ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0'}`}>
+        <div id="mobile-navigation" inert={menu ? undefined : ""} className={`mx-auto grid max-w-7xl transition-all duration-500 xl:hidden ${menu ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0'}`}>
           <div className="overflow-hidden">
             <div className="glass-strong mt-2 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[2rem] p-4">
               <ul>
@@ -237,29 +310,29 @@ export default function App() {
           </div>
         </div>
       </header>
-
-      <main>
+      <main id="main-content">
         {/* Hero */}
-        <section id="home" className="relative">
+        <section id="home" className="hero-section relative">
           <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 animate-drift rounded-full bg-blue-400/30 blur-3xl" />
-          <div className="pointer-events-none absolute -right-20 top-40 h-80 w-80 animate-drift rounded-full bg-yellow-300/40 blur-3xl [animation-delay:-6s]" />
-          <div className="section grid items-center gap-12 !pt-10 lg:grid-cols-2 lg:!pt-16">
-            <div className="relative z-10">
-              <span className="glass inline-block rounded-full px-4 py-1.5 text-xs font-bold tracking-wide text-blue-700">The Everyday Style Edit</span>
-              <h1 className="mt-5 text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl xl:text-7xl">
+          <div className="pointer-events-none absolute -right-20 top-40 h-80 w-80 animate-drift rounded-full bg-blue-300/40 blur-3xl [animation-delay:-6s]" />
+          <div className="section hero-grid grid items-center gap-12 !pt-10 lg:grid-cols-2 lg:!pt-16">
+            <div className="hero-copy relative z-10">
+              <span className="hero-pill glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold tracking-wide text-blue-700"><span className="status-dot" />The Everyday Style Edit<Icon n="spark" className="h-3.5 w-3.5" /></span>
+              <h1 className="mt-5 hero-title text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl xl:text-7xl">
                 Good Style Starts With <span className="bg-gradient-to-r from-blue-700 to-blue-400 bg-clip-text text-transparent">What Feels Like You.</span>
               </h1>
-              <p className="lead mt-6">Discover jeans, T-shirts, shirts and pants that open up new possibilities for your wardrobe. Keep it simple, dress it up or try a fresh combination—Neerakm is your starting point for a look you can call your own.</p>
+              <p className="lead mt-6">Discover jeans, T-shirts, shirts and pants that open up new possibilities for your wardrobe. Keep it simple, dress it up or try a fresh combination—Nickse is your starting point for a look you can call your own.</p>
               <p className="lead mt-3">From morning plans to evenings out, find pieces to wear your way and return to with fresh ideas.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <button onClick={() => go('featured')} className="btn-primary">Explore the Collection</button>
+                <button onClick={() => go('featured')} className="btn-primary">Explore the Collection<Icon n="arrow" className="h-4 w-4" /></button>
                 <button onClick={() => go('looks')} className="btn-glass">Find Your Next Look</button>
               </div>
               <p className="mt-6 text-sm font-bold text-black/60">Jeans. Tees. Shirts. Pants. Your style, brought together.</p>
+              <div className="hero-shortcuts">{CATS.map((c, i) => <button key={c.id} onClick={() => go(c.id)}><span>{String(i + 1).padStart(2, '0')}</span>{c.k}<Icon n="arrow" className="h-3 w-3" /></button>)}</div>
             </div>
-            <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] border-4 border-white shadow-2xl shadow-blue-300/50 sm:aspect-[5/6]">
-                <Img id="1483985988355-763728e1935b" alt="Friends shopping for everyday clothing" className="h-full w-full object-cover" eager />
+            <div className="hero-visual relative mx-auto w-full max-w-xl lg:max-w-none">
+              <div className="hero-photo relative aspect-[4/5] overflow-hidden rounded-[2.5rem] border-4 border-white shadow-2xl shadow-blue-300/50 sm:aspect-[5/6]">
+                <Img id="1516257984-b1b4d707412e" alt="Casual fashion styled with a denim jacket" pos="center 30%" className="h-full w-full object-cover" eager />
                 <div className="absolute inset-0 bg-gradient-to-t from-blue-900/25 via-transparent to-transparent" />
               </div>
               <div className="glass absolute -bottom-5 left-3 flex animate-float items-center gap-3 rounded-3xl p-3 pr-5 sm:-left-6">
@@ -272,7 +345,6 @@ export default function App() {
             </div>
           </div>
         </section>
-
         {/* Brand intro */}
         <section className="section !py-10 md:!py-16">
           <Reveal>
@@ -280,24 +352,23 @@ export default function App() {
               <div>
                 <h2 className="h2">A Wardrobe With Your Name on It.</h2>
                 <p className="lead mt-5">The best outfits feel personal. They reflect your mood, suit your plans and make getting dressed feel natural.</p>
-                <p className="lead mt-3">At Neerakm, we bring everyday clothing together so you can spend less time wondering what to wear and more time making the day your own. Start with a piece you love. Build a combination around it. Add your own finishing touch.</p>
-                <button onClick={() => go('story')} className="btn-sun mt-7">Discover Neerakm</button>
+                <p className="lead mt-3">At Nickse, we bring everyday clothing together so you can spend less time wondering what to wear and more time making the day your own. Start with a piece you love. Build a combination around it. Add your own finishing touch.</p>
+                <button onClick={() => go('story')} className="btn-soft mt-7">Discover Nickse</button>
               </div>
               <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem]"><Img id="1490481651871-ab68de25d43d" alt="Clothes on a rack" className="h-full w-full object-cover" /></div>
             </div>
           </Reveal>
         </section>
-
         {/* Categories */}
         <section id="categories" className="section">
           <Reveal className="mx-auto max-w-3xl text-center">
             <h2 className="h2">Four Essentials. Endless Ways to Wear Them.</h2>
             <p className="lead mx-auto mt-4">Explore the foundations of your wardrobe, from denim days to occasions that call for a sharper look.</p>
           </Reveal>
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
+          <div className="category-grid mt-12 grid gap-6 md:grid-cols-2">
             {CATS.map((c, i) => (
               <Reveal key={c.id} delay={(i % 2) * 120}>
-                <article id={c.id} className="glass group flex h-full flex-col overflow-hidden rounded-[2rem]">
+                <article id={c.id} className="category-card glass group flex h-full flex-col overflow-hidden rounded-[2rem]">
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <Img id={c.img} alt={c.k} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                     <span className="glass absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold">{c.k}</span>
@@ -314,26 +385,27 @@ export default function App() {
             ))}
           </div>
         </section>
-
         {/* Featured */}
-        <section id="featured" className="section">
+        <section id="featured" className="section featured-section">
           <Reveal className="flex flex-col items-start justify-between gap-5 md:flex-row md:items-end">
             <div>
-              <h2 className="h2">Meet Your Next Favourites.</h2>
+              <Eyebrow>The collection</Eyebrow><h2 className="h2">Meet Your Next Favourites.</h2>
               <p className="lead mt-4">Sometimes one new piece is all it takes to refresh the way you get dressed. Explore our featured collection and discover what belongs in your next outfit.</p>
             </div>
-            <button onClick={() => { setQuery(''); setModal({ t: 'search' }) }} className="btn-glass shrink-0">Shop the Full Collection</button>
+            <button onClick={() => { setMenu(false); setQuery(''); setModal({ t: 'search' }) }} className="btn-glass shrink-0">Shop the Full Collection</button>
           </Reveal>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {PRODUCTS.map((p, i) => (
+          <div className="collection-toolbar"><CollectionTabs selected={filter} onChange={setFilter} /><label className="sort-control">Sort by<select aria-label="Sort products" value={sort} onChange={e => setSort(e.target.value)}><option value="featured">Featured</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></label></div>
+          <div className="product-grid mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {visibleProducts.map((p, i) => (
               <Reveal key={p.id} delay={i * 90}>
-                <article className={`glass flex h-full flex-col overflow-hidden rounded-[2rem] transition duration-500 hover:-translate-y-1 ${hl === p.id ? 'ring-4 ring-yellow-300' : ''}`}>
-                  <div className="relative aspect-[4/5] overflow-hidden">
+                <article id={`product-${p.id}`} className={`product-card glass flex h-full flex-col overflow-hidden rounded-[2rem] transition duration-500 hover:-translate-y-1 ${hl === p.id ? 'ring-4 ring-blue-300' : ''}`}>
+                  <div className="product-photo relative aspect-[4/5] overflow-hidden">
                     <Img id={p.img} w={1400} alt={p.name} className="h-full w-full object-cover transition duration-700 hover:scale-105" />
                     <button onClick={() => toggleWish(p.id)} aria-pressed={wish.includes(p.id)} aria-label={`Wishlist ${p.name}`} className="glass absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full transition hover:scale-110">
                       <Icon n="heart" fill={wish.includes(p.id)} className={`h-5 w-5 ${wish.includes(p.id) ? 'text-blue-700' : ''}`} />
                     </button>
                   </div>
+                    <button className="quick-view" onClick={() => openSize(p)}><Icon n="eye" className="h-4 w-4" />Quick view</button>
                   <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-bold text-blue-700">{p.cat}</p>
                     <h3 className="mt-1 text-lg font-extrabold">{p.name}</h3>
@@ -350,7 +422,6 @@ export default function App() {
             ))}
           </div>
         </section>
-
         {/* Why */}
         <section className="section">
           <Reveal className="mx-auto max-w-3xl text-center">
@@ -360,8 +431,8 @@ export default function App() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {WHY.map(([t, d], i) => (
               <Reveal key={t} delay={i * 90}>
-                <div className="glass-strong h-full rounded-[2rem] p-6 transition duration-500 hover:-translate-y-1">
-                  <div className={`mb-5 h-12 w-12 rounded-2xl ${i % 2 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400' : 'bg-gradient-to-br from-blue-200 to-blue-500'}`} />
+                <div className="feature-card glass-strong h-full rounded-[2rem] p-6 transition duration-500 hover:-translate-y-1">
+                  <div className="feature-icon"><Icon n={['spark', 'layers', 'compass', 'shirt'][i]} className="h-6 w-6" /></div>
                   <h3 className="text-xl font-extrabold">{t}</h3>
                   <p className="mt-3 text-sm text-black/70">{d}</p>
                 </div>
@@ -369,7 +440,6 @@ export default function App() {
             ))}
           </div>
         </section>
-
         {/* Shop the look */}
         <section id="looks" className="section">
           <Reveal className="max-w-3xl">
@@ -379,19 +449,18 @@ export default function App() {
           <div className="mt-12 grid gap-6 md:grid-cols-2">
             {LOOKS.map(([t, d, b, img], i) => (
               <Reveal key={t} delay={(i % 2) * 120}>
-                <article className="group relative overflow-hidden rounded-[2rem] border-4 border-white shadow-xl shadow-blue-200/60">
+                <article className="look-card group relative overflow-hidden rounded-[2rem] border-4 border-white shadow-xl shadow-blue-200/60">
                   <div className="aspect-[4/5] sm:aspect-[5/4]"><Img id={img} w={1800} alt={t} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /></div>
-                  <div className="glass-strong absolute inset-x-3 bottom-3 rounded-[1.5rem] p-5 sm:inset-x-4 sm:bottom-4">
+                  <div className="look-caption glass-strong absolute inset-x-3 bottom-3 rounded-[1.5rem] p-5 sm:inset-x-4 sm:bottom-4">
                     <h3 className="text-xl font-extrabold">{t}</h3>
                     <p className="mt-1.5 text-sm text-black/70">{d}</p>
-                    <button onClick={() => go('featured')} className="btn-sun mt-4 !py-2.5">{b}</button>
+                    <button onClick={() => go('featured')} className="btn-soft mt-4 !py-2.5">{b}</button>
                   </div>
                 </article>
               </Reveal>
             ))}
           </div>
         </section>
-
         {/* Editorial banner */}
         <section className="section !py-10">
           <Reveal>
@@ -401,14 +470,13 @@ export default function App() {
               <div className="relative px-6 py-16 sm:px-12 md:py-28">
                 <div className="glass-strong max-w-xl rounded-[2rem] p-7 sm:p-10">
                   <h2 className="h2">Less Time Choosing. More Time Being You.</h2>
-                  <p className="lead mt-4">A wardrobe comes into its own when the pieces work together. Explore Neerakm and find your next combination.</p>
+                  <p className="lead mt-4">A wardrobe comes into its own when the pieces work together. Explore Nickse and find your next combination.</p>
                   <button onClick={() => go('featured')} className="btn-primary mt-6">Build Your Wardrobe</button>
                 </div>
               </div>
             </div>
           </Reveal>
         </section>
-
         {/* Style notes */}
         <section className="section">
           <Reveal className="max-w-3xl">
@@ -417,8 +485,8 @@ export default function App() {
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {NOTES.map(([t, d], i) => (
               <Reveal key={t} delay={i * 90}>
-                <div className="glass h-full rounded-[2rem] border-t-4 border-t-yellow-300 p-6">
-                  <h3 className="text-lg font-extrabold">{t}</h3>
+                <div className="note-card glass h-full rounded-[2rem] p-6">
+                  <span className="note-number">0{i + 1}</span><h3 className="text-lg font-extrabold">{t}</h3>
                   <p className="mt-3 text-sm text-black/70">{d}</p>
                 </div>
               </Reveal>
@@ -426,7 +494,6 @@ export default function App() {
           </div>
           <Reveal><button onClick={() => go('looks')} className="btn-glass mt-8">Explore Outfit Essentials</button></Reveal>
         </section>
-
         {/* Story */}
         <section id="story" className="section">
           <Reveal>
@@ -436,17 +503,16 @@ export default function App() {
                 <div className="glass absolute -bottom-4 right-4 rounded-3xl px-5 py-3 text-sm font-extrabold sm:-right-4">Find Your Fit. Own Your Style.</div>
               </div>
               <div>
-                <h2 className="h2">Neerakm. Your Style, Your Signature.</h2>
+                <Eyebrow>Our story</Eyebrow><h2 className="h2">Nickse. Your Style, Your Signature.</h2>
                 <p className="lead mt-5">Clothing becomes personal through the way you wear it—the combinations you return to, the colours you choose and the pieces that become part of your routine.</p>
-                <p className="lead mt-3">Neerakm brings jeans, T-shirts, shirts and pants into one collection, giving you a starting point for everyday outfits and new ideas.</p>
+                <p className="lead mt-3">Nickse brings jeans, T-shirts, shirts and pants into one collection, giving you a starting point for everyday outfits and new ideas.</p>
                 <p className="lead mt-3">We believe style should leave room for individuality. Some days call for your familiar favourites. Others invite a new combination. Both belong in your wardrobe.</p>
-                <p className="lead mt-3">Our vision is to make Neerakm a place you turn to when you want to explore, refresh and express your own style.</p>
+                <p className="lead mt-3">Our vision is to make Nickse a place you turn to when you want to explore, refresh and express your own style.</p>
                 <button onClick={() => go('featured')} className="btn-primary mt-7">Explore Our Collection</button>
               </div>
             </div>
           </Reveal>
         </section>
-
         {/* Size & Fit + Care */}
         <section className="section grid gap-6 lg:grid-cols-[1.3fr_1fr]">
           <Reveal>
@@ -466,15 +532,14 @@ export default function App() {
             </div>
           </Reveal>
           <Reveal delay={120}>
-            <div className="glass h-full rounded-[2.5rem] bg-gradient-to-br from-yellow-100/70 to-white/50 p-7 sm:p-10">
+            <div className="glass h-full rounded-[2.5rem] bg-gradient-to-br from-blue-100/70 to-white/50 p-7 sm:p-10">
               <h2 className="text-3xl font-extrabold">Keep Your Favourites in Your Rotation.</h2>
               <p className="mt-4 text-black/70">Give each garment the care its fabric and construction need. Before washing, check the care label for instructions on temperature, drying and ironing.</p>
               <p className="mt-3 text-black/70">Follow the product-specific guidance rather than assuming every item needs the same treatment.</p>
-              <button onClick={() => setModal({ t: 'care' })} className="btn-sun mt-6">View Product Care Details</button>
+              <button onClick={() => setModal({ t: 'care' })} className="btn-soft mt-6">View Product Care Details</button>
             </div>
           </Reveal>
         </section>
-
         {/* FAQ */}
         <section id="faq" className="section">
           <Reveal className="mx-auto max-w-3xl text-center"><h2 className="h2">A Few Things You Might Want to Know.</h2></Reveal>
@@ -482,11 +547,11 @@ export default function App() {
             {FAQS.map(([q, a], i) => (
               <Reveal key={q}>
                 <div className="glass overflow-hidden rounded-3xl">
-                  <button onClick={() => setFaq(faq === i ? -1 : i)} aria-expanded={faq === i} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left font-bold sm:px-6">
+                  <button onClick={() => setFaq(faq === i ? -1 : i)} aria-expanded={faq === i} aria-controls={`faq-answer-${i}`} id={`faq-question-${i}`} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left font-bold sm:px-6">
                     {q}
                     <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-700 text-white transition duration-300 ${faq === i ? 'rotate-45' : ''}`}><Icon n="plus" className="h-4 w-4" /></span>
                   </button>
-                  <div className={`grid transition-all duration-500 ${faq === i ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                  <div id={`faq-answer-${i}`} role="region" aria-labelledby={`faq-question-${i}`} aria-hidden={faq !== i} className={`grid transition-all duration-500 ${faq === i ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                     <div className="overflow-hidden"><p className="px-5 pb-5 text-black/70 sm:px-6">{a}</p></div>
                   </div>
                 </div>
@@ -494,38 +559,38 @@ export default function App() {
             ))}
           </div>
         </section>
-
         {/* Newsletter */}
         <section className="section !py-10">
           <Reveal>
             <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 p-6 sm:p-12">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-60 w-60 rounded-full bg-yellow-300/50 blur-3xl" />
+              <div className="pointer-events-none absolute -right-10 -top-10 h-60 w-60 rounded-full bg-blue-300/50 blur-3xl" />
               <div className="glass-strong relative mx-auto max-w-2xl rounded-[2rem] p-6 text-center sm:p-10">
                 <h2 className="h2">Keep Your Wardrobe Inspired.</h2>
-                <p className="lead mx-auto mt-3">Get Neerakm collection updates, outfit ideas and brand news in your inbox.</p>
+                <p className="lead mx-auto mt-3">Get Nickse collection updates, outfit ideas and brand news in your inbox.</p>
                 <form onSubmit={submitNews} noValidate className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <input type="email" aria-label="Email address" value={news.v} onChange={(e) => setNews({ v: e.target.value, s: '' })} placeholder="Your email address" className="field flex-1" />
-                  <button className="btn-primary">Keep Me Updated</button>
+                  <button disabled={news.s === "sending"} className="btn-primary">{news.s === "sending" ? "Sending…" : "Keep Me Updated"}</button>
                 </form>
-                <p className="mt-3 text-xs text-black/60">I agree to receive marketing emails from Neerakm. I can unsubscribe at any time. <button onClick={() => setModal({ t: 'info', k: 'Privacy Policy' })} className="font-bold text-blue-700 underline">Privacy Policy</button></p>
-                {news.s === 'ok' && <p role="status" className="mt-3 font-bold text-green-700">You're on the list. Welcome to Neerakm.</p>}
+                <p className="mt-3 text-xs text-black/60">I agree to receive marketing emails from Nickse. I can unsubscribe at any time. <button onClick={() => setModal({ t: 'info', k: 'Privacy Policy' })} className="font-bold text-blue-700 underline">Privacy Policy</button></p>
+                {news.s === 'ok' && <p role="status" className="mt-3 font-bold text-green-700">You're on the list. Welcome to Nickse.</p>}
+                {news.s === 'unconnected' && <p role="status" className="mt-3 text-sm text-blue-800">Newsletter sign-up will be available soon. Your email has not been submitted.</p>}
+                {news.s === 'failed' && <p role="alert" className="mt-3 text-sm text-red-600">We could not submit your email. Please try again.</p>}
                 {news.s === 'error' && <p role="alert" className="mt-3 font-bold text-red-600">Please enter a valid email address.</p>}
               </div>
             </div>
           </Reveal>
         </section>
-
         {/* Contact */}
         <section id="contact" className="section grid gap-8 lg:grid-cols-[1fr_1.2fr]">
           <Reveal>
             <h2 className="h2">We're Here to Help You Choose.</h2>
-            <p className="lead mt-4">Questions about sizing, a product or an order? Get in touch with Neerakm.</p>
+            <p className="lead mt-4">Questions about sizing, a product or an order? Get in touch with Nickse.</p>
             <dl className="glass mt-8 space-y-4 rounded-[2rem] p-6 text-sm">
               {[['Email', CONFIG.email], ['Phone / WhatsApp', CONFIG.phone], ['Support hours', CONFIG.hours], ['Address', CONFIG.address]].map(([k, v]) => (
                 <div key={k}><dt className="font-bold text-blue-700">{k}</dt><dd className="mt-0.5 break-words text-black/75">{v}</dd></div>
               ))}
             </dl>
-            <button onClick={() => say('WhatsApp chat will open once a business number is added.')} className="btn-sun mt-5">Chat With Neerakm</button>
+            <button onClick={chat} className="btn-soft mt-5">Chat With Nickse</button>
           </Reveal>
           <Reveal delay={120}>
             <form onSubmit={submitContact} noValidate className="glass-strong space-y-4 rounded-[2.5rem] p-6 sm:p-8">
@@ -533,21 +598,22 @@ export default function App() {
               <label className="block text-sm font-bold">Email Address<input type="email" className="field mt-1.5 font-normal" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value, s: '' })} /></label>
               <label className="block text-sm font-bold">Order Number (Optional)<input className="field mt-1.5 font-normal" value={contact.order} onChange={(e) => setContact({ ...contact, order: e.target.value })} /></label>
               <label className="block text-sm font-bold">How Can We Help?<textarea rows="4" className="field mt-1.5 resize-none font-normal" value={contact.msg} onChange={(e) => setContact({ ...contact, msg: e.target.value, s: '' })} /></label>
-              <button className="btn-primary w-full sm:w-auto">Send Your Message</button>
-              {contact.s === 'ok' && <p role="status" className="font-bold text-green-700">Thanks for contacting Neerakm. Your message has been received.</p>}
-              {contact.s === 'error' && <p role="alert" className="font-bold text-red-600">We couldn't send your message. Please try again.</p>}
+              <button disabled={contact.s === "sending"} className="btn-primary w-full sm:w-auto">{contact.s === "sending" ? "Sending…" : "Send Your Message"}<Icon n="arrow" className="h-4 w-4" /></button>
+              {contact.s === 'ok' && <p role="status" className="font-bold text-green-700">Thanks for contacting Nickse. Your message has been received.</p>}
+              {contact.s === 'unconnected' && <p role="status" className="text-sm text-blue-800">Online messages will be available soon. Your message has not been sent.</p>}
+              {contact.s === 'failed' && <p role="alert" className="text-sm text-red-600">We could not send your message. Please try again.</p>}
+              {contact.s === 'error' && <p role="alert" className="font-bold text-red-600">Please enter your name, a valid email address and your message.</p>}
             </form>
           </Reveal>
         </section>
-
         {/* Final CTA */}
         <section className="section !pt-6">
           <Reveal>
-            <div className="glass-strong relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-yellow-100/80 via-white/70 to-blue-100/80 px-6 py-14 text-center sm:px-12 md:py-20">
+            <div className="glass-strong relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-blue-100/80 via-white/70 to-blue-100/80 px-6 py-14 text-center sm:px-12 md:py-20">
               <h2 className="h2 mx-auto max-w-3xl">Find the Pieces. Make the Look Yours.</h2>
-              <p className="lead mx-auto mt-4">Your next outfit can begin with denim, a favourite tee, a fresh shirt or a pair of trousers. Explore Neerakm and discover where your style takes you.</p>
+              <p className="lead mx-auto mt-4">Your next outfit can begin with denim, a favourite tee, a fresh shirt or a pair of trousers. Explore Nickse and discover where your style takes you.</p>
               <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-                <button onClick={() => go('featured')} className="btn-primary">Shop Neerakm</button>
+                <button onClick={() => go('featured')} className="btn-primary">Shop Nickse</button>
                 <button onClick={() => go('categories')} className="btn-glass">Explore Categories</button>
               </div>
               <p className="mt-6 font-display text-lg font-extrabold text-blue-700">Find Your Fit. Own Your Style.</p>
@@ -555,12 +621,11 @@ export default function App() {
           </Reveal>
         </section>
       </main>
-
       {/* Footer */}
       <footer className="border-t border-white bg-gradient-to-b from-blue-50/70 to-white">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
           <div>
-            <p className="font-display text-2xl font-extrabold tracking-[0.18em]">NEERAKM<span className="text-yellow-400">.</span></p>
+            <p className="font-display text-2xl font-extrabold tracking-[0.18em]">NICKSE<span className="text-blue-400">.</span></p>
             <p className="mt-3 font-bold">Everyday clothing. Personal style.</p>
             <p className="mt-2 max-w-xs text-sm text-black/65">Explore jeans, T-shirts, shirts and pants, and build a wardrobe that feels like you.</p>
           </div>
@@ -579,19 +644,18 @@ export default function App() {
           ))}
         </div>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 border-t border-black/5 px-5 py-6 text-sm text-black/60 sm:px-8 md:flex-row md:items-center md:justify-between">
-          <p>© 2026 Neerakm. All rights reserved.</p>
+          <p>© 2026 Nickse. All rights reserved.</p>
           <p className="flex flex-wrap gap-x-4 gap-y-1"><a href={CONFIG.instagram} className="font-bold hover:text-blue-700">Instagram</a><a href={CONFIG.facebook} className="font-bold hover:text-blue-700">Facebook</a><span className="break-all">{CONFIG.email}</span><span>{CONFIG.phone}</span></p>
         </div>
       </footer>
-
       {/* Bag drawer */}
       {bagOpen && (
         <div className="fixed inset-0 z-[90]">
           <button aria-label="Close bag" onClick={() => setBagOpen(false)} className="absolute inset-0 bg-blue-950/20 backdrop-blur-sm" />
-          <aside className="glass-strong absolute inset-y-0 right-0 flex w-full max-w-md animate-slide flex-col rounded-l-[2rem] p-6">
+          <BagPanel onClose={() => setBagOpen(false)}>
             <div className="flex items-center justify-between"><h3 className="text-2xl font-extrabold">Shopping Bag ({bagCount})</h3><button onClick={() => setBagOpen(false)} aria-label="Close" className="btn-glass !p-2"><Icon n="x" /></button></div>
             <div className="mt-6 flex-1 space-y-4 overflow-y-auto">
-              {bag.length === 0 && <div className="py-12 text-center"><p className="font-bold">Your bag is empty.</p><button onClick={() => focusProduct('jeans')} className="btn-primary mt-4">Shop Neerakm</button></div>}
+              {bag.length === 0 && <div className="py-12 text-center"><p className="font-bold">Your bag is empty.</p><button onClick={() => focusProduct('jeans')} className="btn-primary mt-4">Shop Nickse</button></div>}
               {bag.map((i) => (
                 <div key={i.k} className="glass flex gap-4 rounded-3xl p-3">
                   <div className="h-24 w-20 shrink-0 overflow-hidden rounded-2xl"><Img id={i.p.img} w={400} alt={i.p.name} className="h-full w-full object-cover" /></div>
@@ -612,16 +676,15 @@ export default function App() {
             {bag.length > 0 && (
               <div className="border-t border-black/5 pt-4">
                 <div className="flex justify-between text-lg font-extrabold"><span>Subtotal</span><span>{inr(total)}</span></div>
-                <button onClick={() => say('Checkout will be available once your store is connected.')} className="btn-sun mt-4 w-full">Checkout</button>
+                <button onClick={() => say('Checkout will be available once your store is connected.')} className="btn-soft mt-4 w-full">Checkout</button>
               </div>
             )}
-          </aside>
+          </BagPanel>
         </div>
       )}
-
       {/* Modals */}
       {modal?.t === 'search' && (
-        <Modal title="Search Neerakm" onClose={() => setModal(null)} wide>
+        <Modal title="Search Nickse" onClose={() => setModal(null)} wide>
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search jeans, tees, shirts, pants" aria-label="Search" className="field" />
           <div className="mt-4 space-y-3">
             {results.length === 0 && <p className="py-6 text-center text-black/60">No matches. Try jeans, T-shirts, shirts or pants.</p>}
@@ -637,13 +700,14 @@ export default function App() {
       )}
       {modal?.t === 'size' && (
         <Modal title={modal.p.name} onClose={() => setModal(null)}>
+          <div className="quick-product mb-5"><div className="overflow-hidden rounded-2xl"><Img id={modal.p.img} w={768} alt={modal.p.name} className="h-full w-full object-cover" /></div><div><Eyebrow>{modal.p.cat}</Eyebrow><p className="text-sm leading-relaxed text-black/65">{modal.p.desc}</p></div></div>
           <p className="text-sm text-black/70">Choose your size. Check the size guide and compare with a similar garment you own.</p>
           <div className="mt-5 flex flex-wrap gap-2" role="radiogroup" aria-label="Size">
             {modal.p.sizes.map((s) => (
               <button key={s} role="radio" aria-checked={size === s} onClick={() => setSize(s)} className={`h-12 min-w-[3rem] rounded-2xl border px-4 font-bold transition ${size === s ? 'border-blue-700 bg-blue-700 text-white' : 'glass hover:bg-white/90'}`}>{s}</button>
             ))}
           </div>
-          <button onClick={() => setModal({ t: 'guide' })} className="mt-4 text-sm font-bold text-blue-700 underline">View Size Guide</button>
+          <button onClick={() => setModal({ t: 'guide', returnProduct: modal.p })} className="mt-4 text-sm font-bold text-blue-700 underline">View Size Guide</button>
           <div className="mt-6 flex items-center justify-between"><span className="text-xl font-extrabold">{inr(modal.p.price)}</span><button onClick={addToBag} className="btn-primary">Add to Bag</button></div>
         </Modal>
       )}
@@ -653,7 +717,8 @@ export default function App() {
             {['Choose the item you want to explore.', 'Open its size guide and review the fit description.', 'Compare the listed measurements with a similar garment you already own.', 'Contact us if you need help understanding the details.'].map((s, i) => <li key={s} className="flex gap-3"><b className="text-blue-700">{i + 1}.</b>{s}</li>)}
           </ol>
           <p className="mt-4 text-sm text-black/60">Sizes can vary between styles, so check the guide for each product.</p>
-          <button onClick={() => go('contact')} className="btn-sun mt-5">Get Sizing Help</button>
+          {modal.returnProduct && <button className="btn-primary mt-5 mr-2" onClick={() => setModal({ t: 'size', p: modal.returnProduct })}>Back to Product</button>}
+          <button onClick={() => go('contact')} className="btn-soft mt-5">Get Sizing Help</button>
         </Modal>
       )}
       {modal?.t === 'care' && (
@@ -667,7 +732,7 @@ export default function App() {
           {wish.length === 0 ? <p className="py-4 text-black/60">Tap the heart on any product to save it here.</p> : (
             <div className="space-y-3">
               {PRODUCTS.filter((p) => wish.includes(p.id)).map((p) => (
-                <div key={p.id} className="glass flex items-center gap-3 rounded-3xl p-3">
+                <div key={p.id} className="wish-row glass flex flex-wrap items-center gap-3 rounded-3xl p-3">
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl"><Img id={p.img} w={300} alt={p.name} className="h-full w-full object-cover" /></div>
                   <p className="min-w-0 flex-1 truncate font-extrabold">{p.name}</p>
                   <button onClick={() => openSize(p)} className="btn-primary !px-4 !py-2">Choose Size</button>
@@ -687,7 +752,7 @@ export default function App() {
           </form>
         </Modal>
       )}
-
+      {scrolled && !menu && !bagOpen && !modal && <button onClick={() => go('home')} aria-label="Back to top" className="back-top"><Icon n="up" /></button>}
       {/* Toast */}
       <div aria-live="polite" className={`pointer-events-none fixed inset-x-0 bottom-5 z-[100] flex justify-center px-4 transition duration-500 ${toast ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
         <div className="glass-strong flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold"><Icon n="check" className="h-4 w-4 text-blue-700" />{toast}</div>
