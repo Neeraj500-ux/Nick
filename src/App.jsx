@@ -66,7 +66,7 @@ const INFO = {
 }
 const NAV = [['Home', '#home'], ['Shop All', '#featured'], ['Jeans', '#jeans'], ['T-Shirts', '#tee'], ['Shirts', '#shirt'], ['Pants', '#pants'], ['Our Story', '#story'], ['Contact', '#contact']]
 /* ---------- Helpers ---------- */
-const src = (id, w = 2400) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=90`
+const src = (id, w = 2400) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=85`
 const inr = (n) => '₹' + n.toLocaleString('en-IN')
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)
 const P = {
@@ -90,12 +90,12 @@ const Icon = ({ n, className = 'h-5 w-5', fill }) => (
   <svg viewBox="0 0 24 24" className={className} fill={fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={P[n]} /></svg>
 )
 // Responsive photography with a graceful fallback and a soft loading reveal.
-function Img({ id, alt, className = '', w = 1800, pos = 'center', eager }) {
+function Img({ id, alt, className = '', w = 1800, pos = 'center', eager, sizes = '(max-width: 639px) 95vw, (max-width: 1023px) 48vw, 640px' }) {
   const [bad, setBad] = useState(false)
   const [loaded, setLoaded] = useState(false)
   useEffect(() => { setBad(false); setLoaded(false) }, [id])
   if (bad) return <div role="img" aria-label={alt} className={`${className} image-fallback`}><Icon n="shirt" className="h-12 w-12" /><span>{alt}</span></div>
-  return <img src={src(id, w)} srcSet={[480, 768, 1200, 1800, 2400].filter(n => n <= w).map(n => `${src(id, n)} ${n}w`).join(', ')} sizes="(max-width: 639px) 95vw, (max-width: 1023px) 48vw, 640px" alt={alt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} decoding="async" onLoad={() => setLoaded(true)} onError={() => setBad(true)} className={`photo ${loaded ? 'photo-loaded' : ''} ${className}`} style={{ objectPosition: pos }} />
+  return <img src={src(id, w)} srcSet={[480, 768, 1200, 1800, 2400].filter(n => n <= w).map(n => `${src(id, n)} ${n}w`).join(', ')} sizes={sizes} alt={alt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} decoding="async" onLoad={() => setLoaded(true)} onError={() => setBad(true)} className={`photo ${loaded ? 'photo-loaded' : ''} ${className}`} style={{ objectPosition: pos }} />
 }
 
 // Focus containment works for both the product dialogs and the shopping drawer.
@@ -173,7 +173,6 @@ export default function App() {
   const [wish, setWish] = useState(() => readSaved('nickse-wishlist', id => PRODUCTS.some(p => p.id === id)))
   const [filter, setFilter] = useState('All')
   const [activeSection, setActiveSection] = useState('home')
-  const [progress, setProgress] = useState(0)
   const [sort, setSort] = useState('featured')
   const [toast, setToast] = useState('')
   const [hl, setHl] = useState('')
@@ -189,7 +188,7 @@ export default function App() {
   const go = (id) => { setMenu(false); setBagOpen(false); setModal(null); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }), 60) }
   const focusProduct = (id) => { setFilter('All'); go('featured'); setHl(id); setTimeout(() => setHl(''), 2200) }
   useEffect(() => {
-    const on = () => { setScrolled(window.scrollY > 24); const height = document.documentElement.scrollHeight - window.innerHeight; setProgress(height > 0 ? window.scrollY / height : 0) }
+    const on = () => setScrolled(window.scrollY > 24)
     on(); window.addEventListener('scroll', on, { passive: true })
     return () => window.removeEventListener('scroll', on)
   }, [])
@@ -257,11 +256,6 @@ export default function App() {
   return (
     <div className="nickse relative overflow-x-clip bg-gradient-to-b from-white via-blue-50/60 to-white">
       <a className="skip-link" href="#main-content">Skip to content</a>
-      <div className="reading-progress" style={{ transform: `scaleX(${progress})` }} />
-      {/* Announcement */}
-      <div className="announcement px-4 py-2 text-center text-xs font-bold sm:text-sm">
-        Discover your next everyday favourite. Explore the Nickse collection.
-      </div>
       {/* Header */}
       <header ref={navScope} className="site-header sticky top-0 z-50 px-3 pt-3 sm:px-6">
         <nav className={`nav-shell glass mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-2.5 transition-all duration-500 sm:px-6 ${scrolled ? 'bg-white/75 shadow-xl' : ''}`} aria-label="Main">
@@ -284,7 +278,7 @@ export default function App() {
               <Icon n="bag" />
               {bagCount > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-blue-700 text-[10px] font-bold text-white">{bagCount}</span>}
             </button>
-            <button aria-label={menu ? "Close navigation menu" : "Open navigation menu"} aria-controls="mobile-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)} className="relative ml-1 h-10 w-10 rounded-full xl:hidden">
+            <button aria-label={menu ? "Close navigation menu" : "Open navigation menu"} aria-controls="mobile-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)} className="menu-toggle relative ml-1 h-10 w-10 rounded-full xl:hidden">
               <span className={`absolute left-1/2 top-1/2 h-0.5 w-5 -translate-x-1/2 rounded bg-black transition duration-300 ${menu ? 'rotate-45' : '-translate-y-1.5'}`} />
               <span className={`absolute left-1/2 top-1/2 h-0.5 w-5 -translate-x-1/2 rounded bg-black transition duration-300 ${menu ? 'opacity-0' : ''}`} />
               <span className={`absolute left-1/2 top-1/2 h-0.5 w-5 -translate-x-1/2 rounded bg-black transition duration-300 ${menu ? '-rotate-45' : 'translate-y-1.5'}`} />
@@ -319,15 +313,15 @@ export default function App() {
             <div className="hero-copy relative z-10">
               <span className="hero-pill glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold tracking-wide text-blue-700"><span className="status-dot" />The Everyday Style Edit<Icon n="spark" className="h-3.5 w-3.5" /></span>
               <h1 className="mt-5 hero-title text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl xl:text-7xl">
-                Good Style Starts With <span className="bg-gradient-to-r from-blue-700 to-blue-400 bg-clip-text text-transparent">What Feels Like You.</span>
+                <span className="hero-title-start">Good Style</span>{' '}<span className="hero-title-middle">Starts With</span>{' '}<span className="hero-title-accent bg-gradient-to-r from-blue-700 to-blue-400 bg-clip-text text-transparent">What Feels Like You.</span>
               </h1>
               <p className="lead mt-6">Discover jeans, T-shirts, shirts and pants that open up new possibilities for your wardrobe. Keep it simple, dress it up or try a fresh combination—Nickse is your starting point for a look you can call your own.</p>
               <p className="lead mt-3">From morning plans to evenings out, find pieces to wear your way and return to with fresh ideas.</p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="hero-actions mt-8 flex flex-col gap-3 sm:flex-row">
                 <button onClick={() => go('featured')} className="btn-primary">Explore the Collection<Icon n="arrow" className="h-4 w-4" /></button>
                 <button onClick={() => go('looks')} className="btn-glass">Find Your Next Look</button>
               </div>
-              <p className="mt-6 text-sm font-bold text-black/60">Jeans. Tees. Shirts. Pants. Your style, brought together.</p>
+              <p className="hero-caption mt-6 text-sm font-bold text-black/60">Jeans. Tees. Shirts. Pants. Your style, brought together.</p>
               <div className="hero-shortcuts">{CATS.map((c, i) => <button key={c.id} onClick={() => go(c.id)}><span>{String(i + 1).padStart(2, '0')}</span>{c.k}<Icon n="arrow" className="h-3 w-3" /></button>)}</div>
             </div>
             <div className="hero-visual relative mx-auto w-full max-w-xl lg:max-w-none">
@@ -335,11 +329,11 @@ export default function App() {
                 <Img id="1516257984-b1b4d707412e" alt="Casual fashion styled with a denim jacket" pos="center 30%" className="h-full w-full object-cover" eager />
                 <div className="absolute inset-0 bg-gradient-to-t from-blue-900/25 via-transparent to-transparent" />
               </div>
-              <div className="glass absolute -bottom-5 left-3 flex animate-float items-center gap-3 rounded-3xl p-3 pr-5 sm:-left-6">
+              <div className="hero-denim glass absolute -bottom-5 left-3 flex animate-float items-center gap-3 rounded-3xl p-3 pr-5 sm:-left-6">
                 <div className="h-14 w-14 overflow-hidden rounded-2xl"><Img id="1542272604-787c3835535d" w={400} alt="Folded denim jeans" className="h-full w-full object-cover" eager /></div>
                 <div><p className="text-sm font-extrabold">Everyday Denim</p><p className="text-xs text-black/60">Your next go-to pair</p></div>
               </div>
-              <div className="glass absolute -right-1 top-6 hidden animate-float rounded-3xl px-4 py-3 [animation-delay:-3s] sm:block sm:-right-5">
+              <div className="hero-category-label glass absolute -right-1 top-6 hidden animate-float rounded-3xl px-4 py-3 [animation-delay:-3s] sm:block sm:-right-5">
                 <p className="text-sm font-extrabold">Jeans · Tees</p><p className="text-xs text-black/60">Shirts · Pants</p>
               </div>
             </div>
@@ -400,7 +394,7 @@ export default function App() {
               <Reveal key={p.id} delay={i * 90}>
                 <article id={`product-${p.id}`} className={`product-card glass flex h-full flex-col overflow-hidden rounded-[2rem] transition duration-500 hover:-translate-y-1 ${hl === p.id ? 'ring-4 ring-blue-300' : ''}`}>
                   <div className="product-photo relative aspect-[4/5] overflow-hidden">
-                    <Img id={p.img} w={1400} alt={p.name} className="h-full w-full object-cover transition duration-700 hover:scale-105" />
+                    <Img id={p.img} w={1400} sizes="(max-width: 639px) 95vw, (max-width: 1279px) 45vw, 280px" alt={p.name} className="h-full w-full object-cover transition duration-700 hover:scale-105" />
                     <button onClick={() => toggleWish(p.id)} aria-pressed={wish.includes(p.id)} aria-label={`Wishlist ${p.name}`} className="glass absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full transition hover:scale-110">
                       <Icon n="heart" fill={wish.includes(p.id)} className={`h-5 w-5 ${wish.includes(p.id) ? 'text-blue-700' : ''}`} />
                     </button>
