@@ -97,7 +97,6 @@ function Img({ id, alt, className = '', w = 1800, pos = 'center', eager, sizes =
   if (bad) return <div role="img" aria-label={alt} className={`${className} image-fallback`}><Icon n="shirt" className="h-12 w-12" /><span>{alt}</span></div>
   return <img src={src(id, w)} srcSet={[480, 768, 1200, 1800, 2400].filter(n => n <= w).map(n => `${src(id, n)} ${n}w`).join(', ')} sizes={sizes} alt={alt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} decoding="async" onLoad={() => setLoaded(true)} onError={() => setBad(true)} className={`photo ${loaded ? 'photo-loaded' : ''} ${className}`} style={{ objectPosition: pos }} />
 }
-
 // Focus containment works for both the product dialogs and the shopping drawer.
 function useFocusScope(ref, onClose, enabled = true) {
   const closeRef = useRef(onClose)
@@ -134,7 +133,6 @@ function Eyebrow({ children }) { return <p className="eyebrow"><span />{children
 function CollectionTabs({ selected, onChange }) {
   return <div className="collection-tabs" role="group" aria-label="Filter collection">{['All', ...PRODUCTS.map(p => p.cat)].map(label => <button type="button" key={label} aria-pressed={selected === label} onClick={() => onChange(label)} className={selected === label ? 'is-selected' : ''}>{label}{label === 'All' && <span>04</span>}</button>)}</div>
 }
-
 function Reveal({ children, className = '', delay = 0 }) {
   const ref = useRef(null)
   useEffect(() => {
@@ -163,6 +161,87 @@ function Modal({ title, onClose, children, wide }) {
     </div>
   )
 }
+
+/* Mobile arrangement lives here so only App.jsx needs replacing. */
+const MOBILE_LAYOUT = `
+.nickse, .nickse *, .nickse *::before, .nickse *::after { box-sizing: border-box; }
+.nickse svg { flex-shrink: 0; }
+.nickse .field { min-width: 0; max-width: 100%; }
+.nickse .menu-backdrop { position: fixed; inset: 0; z-index: 40; border: 0; background: rgb(15 23 42 / .2); backdrop-filter: blur(8px); }
+@media (max-width: 1279px) {
+  .nickse .site-header { isolation: isolate; }
+  .nickse .site-header.menu-is-open .nav-shell { border-radius: 24px 24px 0 0 !important; }
+  .nickse #mobile-navigation { position: absolute; top: 100%; left: 12px; right: 12px; z-index: 1; }
+  .nickse .mobile-menu-panel { margin-top: 0 !important; max-height: calc(100dvh - 110px) !important; border-radius: 0 0 24px 24px !important; overscroll-behavior: contain; padding: 16px !important; }
+  .nickse .mobile-menu-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; list-style: none; padding: 0; margin: 0; }
+  .nickse .mobile-menu-links a { height: 100%; min-height: 52px; justify-content: center !important; text-align: center; gap: 8px; padding: 12px 8px !important; font-size: 15px !important; background: rgb(255 255 255 / .65); border: 1px solid rgb(255 255 255 / .9); }
+  .nickse .mobile-menu-links a[aria-current="location"] { background: linear-gradient(110deg, #1d4ed8, #60a5fa); color: #fff; }
+  .nickse .mobile-menu-links a svg { display: none; }
+  .nickse .mobile-menu-tools { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0 !important; margin-bottom: 12px; padding-top: 0 !important; border-top: 0 !important; }
+  .nickse .mobile-menu-tools button { width: 100%; min-width: 0; min-height: 48px; padding: 12px 8px !important; justify-content: center; font-size: 14px; }
+}
+@media (max-width: 1023px) {
+  .nickse .hero-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 36px !important; padding-top: 42px !important; padding-bottom: 44px !important; }
+  .nickse .hero-copy { width: 100%; min-width: 0; max-width: 700px; margin-inline: auto; text-align: center !important; }
+  .nickse .hero-pill { max-width: 100%; justify-content: center; letter-spacing: .02em; }
+  .nickse .hero-title { max-width: 680px; margin-inline: auto !important; font-size: clamp(34px, 5.6vw, 58px) !important; line-height: 1.12 !important; letter-spacing: -.045em !important; overflow-wrap: normal; word-break: normal; text-wrap: balance; }
+  .nickse .hero-title-start, .nickse .hero-title-middle { display: inline !important; }
+  .nickse .hero-title-accent { display: block !important; margin-top: 6px; }
+  .nickse .hero-copy .lead { width: 100%; max-width: 620px; margin-inline: auto !important; font-size: clamp(15px, 2.1vw, 18px) !important; line-height: 1.75 !important; }
+  .nickse .hero-actions { width: 100%; max-width: 580px; margin-inline: auto; justify-content: center; }
+  .nickse .hero-actions button { min-width: 0; justify-content: center; white-space: normal !important; }
+  .nickse .hero-caption { max-width: 560px; margin-inline: auto; line-height: 1.6; }
+  .nickse .hero-shortcuts { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 580px; margin: 22px auto 0 !important; }
+  .nickse .hero-shortcuts button { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; padding: 12px 8px; }
+  .nickse .hero-visual { max-width: 580px !important; padding: 0 0 26px !important; }
+  .nickse .hero-photo { aspect-ratio: 5 / 4 !important; border-radius: 26px !important; }
+  .nickse .hero-denim { left: 12px !important; bottom: 8px !important; max-width: calc(100% - 24px); animation: none !important; }
+  .nickse .hero-category-label { right: 12px !important; top: 16px !important; }
+}
+@media (max-width: 639px) {
+  .nickse .site-header { padding: 10px 10px 0 !important; }
+  .nickse .nav-shell { padding: 10px 12px !important; gap: 8px; }
+  .nickse .brand { flex-shrink: 0; gap: 4px !important; font-size: 17px !important; letter-spacing: .07em !important; }
+  .nickse .brand-mark { width: 32px !important; height: 32px !important; flex-shrink: 0; display: inline-grid; place-items: center; }
+  .nickse .menu-toggle { flex-shrink: 0; margin-left: 0 !important; }
+  .nickse .section { width: 100%; min-width: 0; padding-left: 18px !important; padding-right: 18px !important; }
+  .nickse .section > *, .nickse .rv, .nickse article { min-width: 0; max-width: 100%; }
+  .nickse .hero-grid { padding-top: 38px !important; gap: 28px !important; }
+  .nickse .hero-pill { font-size: 11px !important; padding: 8px 12px !important; }
+  .nickse .hero-title { margin-top: 20px !important; font-size: clamp(32px, 8.8vw, 48px) !important; }
+  .nickse .hero-copy .lead { margin-top: 18px !important; }
+  .nickse .hero-copy .lead + .lead { margin-top: 12px !important; }
+  .nickse .hero-actions { flex-direction: column !important; gap: 12px !important; margin-top: 24px !important; }
+  .nickse .hero-actions button { width: 100% !important; min-height: 52px; padding: 14px 16px !important; font-size: 14px; }
+  .nickse .hero-caption { font-size: 12px !important; margin-top: 20px !important; }
+  .nickse .hero-shortcuts button { font-size: 12px; }
+  .nickse .hero-shortcuts button span { font-size: 10px; }
+  .nickse .hero-photo { aspect-ratio: 4 / 5 !important; }
+  .nickse .h2 { font-size: clamp(26px, 7.2vw, 34px) !important; line-height: 1.2 !important; letter-spacing: -.03em; text-wrap: balance; }
+  .nickse .lead { font-size: 15px !important; line-height: 1.7 !important; }
+  .nickse .category-grid, .nickse .product-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 20px !important; }
+  .nickse .category-card h3 { font-size: 22px; line-height: 1.3; }
+  .nickse .category-card .absolute { max-width: calc(100% - 32px); white-space: normal; }
+  .nickse .collection-toolbar { display: flex; flex-direction: column; align-items: stretch; gap: 16px; }
+  .nickse .collection-tabs { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
+  .nickse .collection-tabs button { min-height: 42px; padding: 10px 13px; font-size: 12px; }
+  .nickse .sort-control { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .nickse .sort-control select { min-width: 0; max-width: 100%; flex: 1; }
+  .nickse .look-caption { position: relative !important; inset: auto !important; width: calc(100% - 20px); margin: -24px 10px 10px; padding: 18px !important; }
+  .nickse .look-caption button { width: 100%; justify-content: center; white-space: normal; }
+  .nickse .quick-product { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .nickse .quick-product > div:first-child { max-height: 200px; }
+  .nickse .wish-row { gap: 10px; }
+  .nickse .wish-row > p { white-space: normal; overflow: visible; }
+  .nickse .wish-row > .btn-primary { width: 100%; order: 4; }
+  .nickse .field { font-size: 16px !important; width: 100%; }
+  .nickse .back-top { right: 14px; bottom: max(18px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nickse #mobile-navigation, .nickse .mobile-menu-links li, .nickse .menu-toggle span { transition: none !important; }
+}
+`
+
 /* ---------- App ---------- */
 export default function App() {
   const [menu, setMenu] = useState(false)
@@ -255,9 +334,11 @@ export default function App() {
   const results = PRODUCTS.filter((p) => `${p.name} ${p.cat}`.toLowerCase().includes(query.toLowerCase()))
   return (
     <div className="nickse relative overflow-x-clip bg-gradient-to-b from-white via-blue-50/60 to-white">
+      <style>{MOBILE_LAYOUT}</style>
+      {menu && <button type="button" tabIndex={-1} aria-label="Close navigation" className="menu-backdrop xl:hidden" onClick={() => setMenu(false)} />}
       <a className="skip-link" href="#main-content">Skip to content</a>
       {/* Header */}
-      <header ref={navScope} className="site-header sticky top-0 z-50 px-3 pt-3 sm:px-6">
+      <header ref={navScope} className={`site-header sticky top-0 z-50 px-3 pt-3 sm:px-6 ${menu ? "menu-is-open" : ""}`}>
         <nav className={`nav-shell glass mx-auto flex max-w-7xl items-center justify-between rounded-full px-4 py-2.5 transition-all duration-500 sm:px-6 ${scrolled ? 'bg-white/75 shadow-xl' : ''}`} aria-label="Main">
           <a href="#home" onClick={(e) => { e.preventDefault(); go('home') }} className="brand flex items-center gap-1.5 font-display text-xl font-extrabold tracking-[0.12em] sm:text-2xl">
             <span className="brand-mark" aria-hidden="true">N</span>NICKSE<span className="text-blue-600">.</span>
@@ -288,18 +369,19 @@ export default function App() {
         {/* Mobile menu */}
         <div id="mobile-navigation" inert={menu ? undefined : ""} className={`mx-auto grid max-w-7xl transition-all duration-500 xl:hidden ${menu ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0'}`}>
           <div className="overflow-hidden">
-            <div className="glass-strong mt-2 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[2rem] p-4">
-              <ul>
-                {NAV.map(([l, h], i) => (
-                  <li key={l} className={`transition-all duration-500 ${menu ? 'translate-y-0 opacity-100' : '-translate-y-3 opacity-0'}`} style={{ transitionDelay: menu ? `${80 + i * 45}ms` : '0ms' }}>
-                    <a href={h} onClick={(e) => { e.preventDefault(); go(h.slice(1)) }} className="flex items-center justify-between rounded-2xl px-4 py-3.5 text-lg font-bold transition hover:bg-blue-50">{l}<Icon n="arrow" className="h-4 w-4 text-blue-700" /></a>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-2 flex gap-2 border-t border-black/5 pt-3">
+            <div className="mobile-menu-panel glass-strong mt-2 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[2rem] p-4">
+              <div className="mobile-menu-tools mt-2 flex gap-2 border-t border-black/5 pt-3">
                 <button onClick={() => { setMenu(false); setModal({ t: 'account' }) }} className="btn-glass flex-1">Account</button>
                 <button onClick={() => { setMenu(false); setModal({ t: 'wish' }) }} className="btn-glass flex-1">Wishlist ({wish.length})</button>
               </div>
+              <ul className="mobile-menu-links">
+                {NAV.map(([l, h], i) => (
+                  <li key={l} className={`transition-all duration-500 ${menu ? 'translate-y-0 opacity-100' : '-translate-y-3 opacity-0'}`} style={{ transitionDelay: menu ? `${80 + i * 45}ms` : '0ms' }}>
+                    <a href={h} onClick={(e) => { e.preventDefault(); go(h.slice(1)) }} aria-current={activeSection === h.slice(1) ? "location" : undefined} className="flex items-center justify-between rounded-2xl px-4 py-3.5 text-lg font-bold transition hover:bg-blue-50">{l}<Icon n="arrow" className="h-4 w-4 text-blue-700" /></a>
+                  </li>
+                ))}
+              </ul>
+
             </div>
           </div>
         </div>
